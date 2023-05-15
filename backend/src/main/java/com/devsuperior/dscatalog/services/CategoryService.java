@@ -11,7 +11,9 @@ import org.springframework.transaction.annotation.Transactional;
 import com.devsuperior.dscatalog.dto.CategoryDTO;
 import com.devsuperior.dscatalog.entities.Category;
 import com.devsuperior.dscatalog.repositories.CategoryRepository;
-import com.devsuperior.dscatalog.services.exceptions.EntityNotFoundException;
+import com.devsuperior.dscatalog.services.exceptions.ResourceNotFoundException;
+
+import jakarta.persistence.EntityNotFoundException;
 
 @Service
 public class CategoryService {
@@ -31,7 +33,7 @@ public class CategoryService {
 	@Transactional(readOnly = true)
 	public CategoryDTO findById(Long id) {
 		Optional<Category> obj =  repository.findById(id);
-		Category entity = obj.orElseThrow(() -> new EntityNotFoundException("Objeto não encontardo"));
+		Category entity = obj.orElseThrow(() -> new ResourceNotFoundException("Objeto não encontardo"));
 		return new CategoryDTO(entity);
 		
 	}
@@ -43,7 +45,20 @@ public class CategoryService {
 		entity = repository.save(entity);
 		return new CategoryDTO(entity);
 	}
+
+	@Transactional
+	public CategoryDTO update(Long id, CategoryDTO dto) {
+		try{
+			Category entity = repository.getOne(id); //Atualizar registro na JPA tem que instanciar
+			entity.setName(dto.getName());	//Atualizei os dados na memoria
+			entity = repository.save(entity); 
+			return new CategoryDTO(entity); //retornando a entidade convertida para DTO
+		}
+		catch(EntityNotFoundException e) { //Salvar excessão do caso getOne não existir
+			throw new ResourceNotFoundException("Id não encontrado" + id);
+			
+		}
 	
-	
+	}	
 
 }
