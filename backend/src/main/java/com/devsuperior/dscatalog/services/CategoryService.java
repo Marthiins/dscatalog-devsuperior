@@ -35,6 +35,14 @@ public class CategoryService {
 		return new CategoryDTO(entity);
 		
 	}
+
+	@Transactional
+	public CategoryDTO insert(CategoryDTO dto) {
+		Category entity = new Category(); //CovnerterDTO para a entidade Category
+		entity.setName(dto.getName());
+		entity = repository.save(entity);
+		return new CategoryDTO(entity);
+	}
 	
 	
 
