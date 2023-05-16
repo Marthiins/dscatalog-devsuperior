@@ -10,8 +10,11 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.devsuperior.dscatalog.dto.CategoryDTO;
 import com.devsuperior.dscatalog.dto.ProductDTO;
+import com.devsuperior.dscatalog.entities.Category;
 import com.devsuperior.dscatalog.entities.Product;
+import com.devsuperior.dscatalog.repositories.CategoryRepository;
 import com.devsuperior.dscatalog.repositories.ProductRepository;
 import com.devsuperior.dscatalog.services.exceptions.DatabaseException;
 import com.devsuperior.dscatalog.services.exceptions.ResourceNotFoundException;
@@ -23,7 +26,9 @@ public class ProductService {
 	
 	@Autowired
 	private ProductRepository repository;
-
+	
+	@Autowired
+	private CategoryRepository CategoryRepository;
 
 	@Transactional(readOnly = true)
 	public Page<ProductDTO> findAllPage(PageRequest pageRequest){ //Metodo acessar o repository e acessar la no banco de dados a Product
@@ -43,16 +48,19 @@ public class ProductService {
 	@Transactional
 	public ProductDTO insert(ProductDTO dto) {
 		Product entity = new Product(); //CovnerterDTO para a entidade Product
-		//entity.setName(dto.getName());
+		copyDtoToEntity(dto, entity); //Chamando o metodo que foi criado
+		
 		entity = repository.save(entity);
 		return new ProductDTO(entity);
 	}
 
+	
 	@Transactional
 	public ProductDTO update(Long id, ProductDTO dto) {
 		try{
 			Product entity = repository.getOne(id); //Atualizar registro na JPA tem que instanciar
-			//entity.setName(dto.getName());	//Atualizei os dados na memoria
+			copyDtoToEntity(dto, entity);
+			
 			entity = repository.save(entity); 
 			return new ProductDTO(entity); //retornando a entidade convertida para DTO
 		}
@@ -65,15 +73,33 @@ public class ProductService {
 
 	public void delete(Long id) {
 			findById(id);
-		try {  //Excessão deletar caso id não exista
-			repository.deleteById(id);
+		try {  
+				repository.deleteById(id);
 		}	
-		catch(EmptyResultDataAccessException e) {
+		catch (EmptyResultDataAccessException e) {
 			throw new ResourceNotFoundException("Id não encontrado" + id);
 		}
-		catch(DataIntegrityViolationException e) {
-			throw new DatabaseException("Não é possivel excluir um produto  violação de integridade.");
+		catch (DataIntegrityViolationException e) {
+			throw new DatabaseException("Não é possivel excluir um produto violação de integridade.");
 		}
-	}	
+	}
+
+	
+	private void copyDtoToEntity(ProductDTO dto, Product entity) {
+		
+		entity.setName(dto.getName());
+		entity.setDescription(dto.getDescription());
+		entity.setDate(dto.getDate());
+		entity.setImgUrl(dto.getImgUrl());
+		entity.setPrice(dto.getPrice());
+		
+		entity.getCategories().clear();//Carregar as categorias do DTO para entidades
+		for(CategoryDTO catDto : dto.getCategories()) { //forech para percorrer todas as CategoryDTO que estão associados ao meu dto
+			Category category = CategoryRepository.getOne(catDto.getId());//Instanciar uma entidade de categoria pelo JPA
+			entity.getCategories().add(category);
+		}
+		
+	}
+
 
 }
