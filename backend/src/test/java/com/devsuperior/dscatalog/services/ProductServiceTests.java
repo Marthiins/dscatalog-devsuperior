@@ -11,6 +11,7 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import com.devsuperior.dscatalog.repositories.ProductRepository;
+import com.devsuperior.dscatalog.services.exceptions.ResourceNotFoundException;
 
 @ExtendWith(SpringExtension.class)
 public class ProductServiceTests { //Teste de unidade para o service Não vai acessar ao repository que vai acessar o banco
@@ -35,6 +36,18 @@ public class ProductServiceTests { //Teste de unidade para o service Não vai ac
 		
 			Mockito.doThrow(EmptyResultDataAccessException.class).when(repository).deleteById(nonExistingId);//Lançar excessão quando passar Id que não existe
 		}
+		
+		@Test
+		public void deleteShoulResourceNotFoundExceptionWhenIdNotExists() { //deve lançar essa exceção do controller quando o Id não existir
+			
+			Assertions.assertThrows(ResourceNotFoundException.class, () -> {
+				service.delete(nonExistingId);
+			});
+			
+			Mockito.verify(repository , Mockito.times(1)).deleteById(nonExistingId);
+			
+		}
+		
 		
 		@Test
 		public void deleteShouldDoNothingWhenIdExists() { //deleteNaoFazNadaQuandoIdExist
