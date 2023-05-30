@@ -18,10 +18,13 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import com.devsuperior.dscatalog.dto.ProductDTO;
 import com.devsuperior.dscatalog.entities.Product;
 import com.devsuperior.dscatalog.repositories.ProductRepository;
 import com.devsuperior.dscatalog.services.exceptions.DatabaseException;
@@ -62,12 +65,25 @@ public class ProductServiceTests { //Teste de unidade para o service Não vai ac
 			when(repository.findById(nonExistingId)).thenReturn(Optional.empty()); //Instanciando um optional vazio
 			
 			
-			
 			//Comportamentos para os objetos repositores mocado. quando o metodo é void <should><AÇÃO> e depois o <When><Cenário quando acontecer isso>
 			Mockito.doNothing().when(repository).deleteById(existingId);//Quando eu chamar o deleteById com o id existente o metodo não vai fazer nada
 			Mockito.doThrow(EmptyResultDataAccessException.class).when(repository).deleteById(nonExistingId);//Lançar excessão quando passar Id que não existe
 			doThrow(DataIntegrityViolationException.class).when(repository).deleteById(dependentId);
 		
+		}
+		
+		@Test
+		public void findAllPagedShouldreturnPage() { //Deveria retornar uma page
+			
+			Pageable pageable = PageRequest.of(0, 10);
+			
+			Page<ProductDTO> result = service.findAllPaged(pageable);
+			
+			Assertions.assertNotNull(result);
+			
+			Mockito.verify(repository).findAll(pageable);
+			
+			
 		}
 		
 		
