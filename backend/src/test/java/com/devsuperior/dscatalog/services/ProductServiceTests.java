@@ -25,9 +25,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import com.devsuperior.dscatalog.dto.ProductDTO;
+import com.devsuperior.dscatalog.entities.Category;
 import com.devsuperior.dscatalog.entities.Product;
+import com.devsuperior.dscatalog.repositories.CategoryRepository;
 import com.devsuperior.dscatalog.repositories.ProductRepository;
 import com.devsuperior.dscatalog.services.exceptions.DatabaseException;
+import com.devsuperior.dscatalog.services.exceptions.EntityNotFoundException;
 import com.devsuperior.dscatalog.services.exceptions.ResourceNotFoundException;
 import com.devsuperior.dscatalog.tests.Factory;
 
@@ -41,11 +44,17 @@ public class ProductServiceTests { //Teste de unidade para o service Não vai ac
 		@Mock
 		private ProductRepository repository;
 		
+		@Mock
+		private CategoryRepository categoryRepository;
+		
 		private long existingId;
 		private long nonExistingId;
 		private long dependentId;
-		private PageImpl<Product> page;
 		private Product product;
+		private Category category;
+		ProductDTO productDTO;
+		private PageImpl<Product> page;
+		
 		
 		@BeforeEach
 		void setUp() throws Exception {
@@ -53,6 +62,8 @@ public class ProductServiceTests { //Teste de unidade para o service Não vai ac
 			nonExistingId = 1000L;
 			dependentId = 4L;
 			product = Factory.createProduct();
+			category = Factory.createCategory();
+			productDTO = Factory.createProductDTO();
 			page = new PageImpl<>(List.of(product)); //Já instanciado com uma lista com um unico elemento que vai ser o produto
 			
 			
@@ -64,6 +75,11 @@ public class ProductServiceTests { //Teste de unidade para o service Não vai ac
 			when(repository.findById(existingId)).thenReturn(Optional.of(product)); //Instanciando um optional que tem um produto
 			when(repository.findById(nonExistingId)).thenReturn(Optional.empty()); //Instanciando um optional vazio
 			
+			when(repository.getOne(existingId)).thenReturn(product); 
+			when(repository.getOne(nonExistingId)).thenThrow(EntityNotFoundException.class); //lançar a excessão para o update
+			
+			when(categoryRepository.getOne(existingId)).thenReturn(category); 
+			when(categoryRepository.getOne(nonExistingId)).thenThrow(EntityNotFoundException.class); //lançar a excessão para o update
 			
 			//Comportamentos para os objetos repositores mocado. quando o metodo é void <should><AÇÃO> e depois o <When><Cenário quando acontecer isso>
 			Mockito.doNothing().when(repository).deleteById(existingId);//Quando eu chamar o deleteById com o id existente o metodo não vai fazer nada
@@ -71,6 +87,43 @@ public class ProductServiceTests { //Teste de unidade para o service Não vai ac
 			doThrow(DataIntegrityViolationException.class).when(repository).deleteById(dependentId);
 		
 		}
+		
+		@Test
+		public void updateShouldReturnProductDTOWhenIdExixts() { //Retorna quando o Id existe
+		
+			ProductDTO result = service.update(existingId , productDTO);
+			
+			Assertions.assertNotNull(result); //Confirmando que esta retornando um resultado do ProductDTO
+			
+		}
+		
+		@Test
+		public void updateShouldResourceNotFoundExceptionWhenIdDoesNotExixts() { //Excessão Retorna quando o Id não existe
+			
+			Assertions.assertThrows(ResourceNotFoundException.class, () -> {
+				
+				service.update(nonExistingId, productDTO);
+			});	
+		}
+		
+		
+		@Test
+		public void findByIdshouldResourceNotFoundExceptionWhenIdDoesNotExixts() { //Excessão Retorna quando o Id não existe
+			
+			Assertions.assertThrows(ResourceNotFoundException.class, () -> {
+				
+				ProductDTO result = service.findById(nonExistingId);
+			});	
+		}
+		
+		@Test
+		public void findByIdshouldReturnProductDTOWhenIdExixts() { //Retorna quando o Id existe
+			ProductDTO result = service.findById(existingId);
+			
+			Assertions.assertNotNull(result); //Confirmando que esta retornando um resultado do ProductDTO
+			
+		}
+		
 		
 		@Test
 		public void findAllPagedShouldreturnPage() { //Deveria retornar uma page

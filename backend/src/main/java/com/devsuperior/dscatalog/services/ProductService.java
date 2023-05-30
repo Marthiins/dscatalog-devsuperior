@@ -99,7 +99,8 @@ public class ProductService {
 		entity.getCategories().clear();//Carregar as categorias do DTO para entidades
 		for(CategoryDTO catDto : dto.getCategories()) { //forech para percorrer todas as CategoryDTO que estão associados ao meu dto
 			Category category = CategoryRepository.getOne(catDto.getId());//Instanciar uma entidade de categoria pelo JPA
-			entity.getCategories().add(category);
+			entity.getCategories().add(category); 
+			//entity.getCategories().add(new CategorycatDto.getId(), null));    // poderia ter feito assim e excluido Instanciar uma entidade la em cima
 		}
 		
 	}
